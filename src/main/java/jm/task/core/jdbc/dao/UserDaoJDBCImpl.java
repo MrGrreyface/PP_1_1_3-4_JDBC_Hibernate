@@ -28,13 +28,11 @@ public class UserDaoJDBCImpl implements UserDao {
 
         String sql = "drop table if exists usertable";
         try (Connection connection = Util.getConnection(); Statement dropUT = connection.createStatement();) {
-
             dropUT.executeUpdate(sql);
             System.out.println("Таблица удалена");
         } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     public void saveUser(String name, String lastName, byte age) {
@@ -42,10 +40,17 @@ public class UserDaoJDBCImpl implements UserDao {
         String sql = "insert usertable(name, lastName, age) values (?, ?, ?)";
         try (Connection connection = Util.getConnection(); PreparedStatement saveUser = connection.prepareStatement(sql)) {
 
-            saveUser.setString(1, name);
-            saveUser.setString(2, lastName);
-            saveUser.setByte(3, age);
-            saveUser.executeUpdate();
+            try {
+                connection.setAutoCommit(false);
+                saveUser.setString(1, name);
+                saveUser.setString(2, lastName);
+                saveUser.setByte(3, age);
+                saveUser.executeUpdate();
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new RuntimeException();
+            }
             System.out.println(String.format("User с именем – %s добавлен в базу данных ", name));
         } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -56,8 +61,15 @@ public class UserDaoJDBCImpl implements UserDao {
     public void removeUserById(long id) {
         String sql = "delete from usertable where id = ?";
         try (Connection connection = Util.getConnection(); PreparedStatement removeUser = connection.prepareStatement(sql)) {
-            removeUser.setLong(1, id);
-            removeUser.executeUpdate();
+            try {
+                connection.setAutoCommit(false);
+                removeUser.setLong(1, id);
+                removeUser.executeUpdate();
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new RuntimeException(e);
+            }
         } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -69,14 +81,22 @@ public class UserDaoJDBCImpl implements UserDao {
         String sql = "select * from usertable";
 
         try (Connection connection = Util.getConnection(); Statement getAllUsers = connection.createStatement();) {
-            ResultSet resultSet = getAllUsers.executeQuery(sql);
-            while (resultSet.next()) {
-                User user = new User();
-                user.setId(resultSet.getLong("id"));
-                user.setName(resultSet.getString("name"));
-                user.setLastName(resultSet.getString("lastName"));
-                user.setAge(resultSet.getByte("age"));
-                allUsers.add(user);
+
+            try {
+                connection.setAutoCommit(false);
+                ResultSet resultSet = getAllUsers.executeQuery(sql);
+                while (resultSet.next()) {
+                    User user = new User();
+                    user.setId(resultSet.getLong("id"));
+                    user.setName(resultSet.getString("name"));
+                    user.setLastName(resultSet.getString("lastName"));
+                    user.setAge(resultSet.getByte("age"));
+                    allUsers.add(user);
+                }
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new RuntimeException(e);
             }
         } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -87,8 +107,15 @@ public class UserDaoJDBCImpl implements UserDao {
     public void cleanUsersTable() {
         String sql = "delete from usertable";
         try (Connection connection = Util.getConnection(); PreparedStatement cleanUT = connection.prepareStatement(sql)) {
-            cleanUT.executeUpdate();
-            System.out.println("Таблица очищена");
+            try {
+                connection.setAutoCommit(false);
+                cleanUT.executeUpdate();
+                System.out.println("Таблица очищена");
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new RuntimeException(e);
+            }
         } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

@@ -12,13 +12,7 @@ public class Util {
     private static final String dbName = "table";
     private static final String userName = "root";
     private static final String password = "Lijyg741";
- /* public static Connection getConnection() throws SQLException, ClassNotFoundException {
-
-        return getConnection(hostName, dbName, userName, password);
-    }*/
-    public static Connection getConnection(/*String hostName, String dbName,
-                                           String userName, String password*/)
-                                           throws SQLException, ClassNotFoundException {
+    public static Connection getConnection() throws SQLException, ClassNotFoundException {
         Class.forName("com.mysql.cj.jdbc.Driver");
 
         String connectionURL = "jdbc:mysql://" + hostName + ":3306/" + dbName;
